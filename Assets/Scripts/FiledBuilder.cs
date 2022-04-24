@@ -7,6 +7,7 @@ using Random = UnityEngine.Random;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 using Object = System.Object;
 using Timer = System.Threading.Timer;
@@ -43,6 +44,15 @@ public class FiledBuilder : MonoBehaviour
 
     private bool _checkOnWrong = false;
     private float _timeWrong;
+
+    private bool _checkOnDelete = false;
+    private float _timeDelete;
+    
+    private bool _fillFieldChech = false;
+    private float _timeFill;
+
+    [SerializeField] private Text _scoreText;
+    private int _score = 0;
     private void Awake()
     {
         _selectedSquare = null;
@@ -70,6 +80,18 @@ public class FiledBuilder : MonoBehaviour
         {
             _checkOnWrong = false;
             DeleteWrongView();
+        }
+        
+        if (_checkOnDelete && _curTime - _timeDelete > 0.3)
+        {
+            _checkOnDelete = false;
+            FallField();
+        }
+        
+        if (_fillFieldChech && _curTime - _timeFill > 0.35)
+        {
+            _fillFieldChech = false;
+            checkOnDelete();
         }
     }
 
@@ -325,13 +347,17 @@ public class FiledBuilder : MonoBehaviour
                     toDelete.Add(_field[row][column]);
                     deleteSquares(toDelete);
                     wasDeleted = true;
+                    _score += toDelete.Count;
+                    _scoreText.text = _score.ToString();
                 }
             }
         }
 
         if (wasDeleted)
         {
-            FallField();
+            _timeDelete = _curTime;
+            _checkOnDelete = true;
+            //FallField();
         }
     }
 
@@ -359,7 +385,7 @@ public class FiledBuilder : MonoBehaviour
     private void FallField()
     {
         bool wasFalles = true;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 4; i++)
         {
             for (int row = FIELD_SIZE - 1; row >= 0; row--)
             {
@@ -374,7 +400,9 @@ public class FiledBuilder : MonoBehaviour
         }
 
         initField();
-        checkOnDelete();
+        _timeFill = _curTime;
+        _fillFieldChech = true;
+        //checkOnDelete();
     }
 
     private void initField()
