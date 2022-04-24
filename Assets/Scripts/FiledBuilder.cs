@@ -181,6 +181,7 @@ public class FiledBuilder : MonoBehaviour
 
     public void SquareIsSelect(Square square, int row, int column)
     {
+        Debug.Log("Selected " + row +" " + column);
         if (_selectedSquare == null)
         {
             _selectedSquare = new CurSelectedSquare(square, row, column);
@@ -204,23 +205,7 @@ public class FiledBuilder : MonoBehaviour
                 int curRow = _selectedSquare.getRow();
                 int curColumn = _selectedSquare.getColumn();
 
-                (_gameObjectsField[prevRow][prevColumn], _gameObjectsField[curRow][curColumn]) = 
-                    (_gameObjectsField[curRow][curColumn], _gameObjectsField[prevRow][prevColumn]);
-                
-                initNewSquare(curRow, curColumn);
-                initNewSquare(prevRow, prevColumn);
-
-                _field[curRow][curColumn] = _gameObjectsField[curRow][curColumn].GetComponent<Square>();
-                _field[prevRow][prevColumn] = _gameObjectsField[prevRow][prevColumn].GetComponent<Square>();
-                
-                _field[curRow][curColumn].setCoordAndBulder(curRow, curColumn, this);
-                _field[prevRow][prevColumn].setCoordAndBulder(prevRow, prevColumn, this);
-                
-                _field[curRow][curColumn].setNormalView();
-                _field[prevRow][prevColumn].setNormalView();
-
-                _prevSelectedSquare = null;
-                _selectedSquare = null;
+                SwapSquares(prevRow, prevColumn, curRow, curColumn);
 
                 checkOnDelete();
             }
@@ -233,36 +218,106 @@ public class FiledBuilder : MonoBehaviour
         }
     }
 
+    private void SwapSquares(int prevRow, int prevColumn, int curRow, int curColumn)
+    {
+        if (_gameObjectsField[prevRow][prevColumn] == null && _gameObjectsField[curRow][curColumn] == null)
+        {
+            return;;
+        }
+        if (_gameObjectsField[prevRow][prevColumn] == null)
+        {
+            _gameObjectsField[curRow][curColumn].GetComponent<Square>().setCoordAndBulder(prevRow, curColumn, this);
+            initNewSquare(prevRow, prevColumn, _gameObjectsField[curRow][curColumn]);
+            _field[prevRow][prevColumn] = _gameObjectsField[prevRow][prevColumn].GetComponent<Square>();
+
+            _gameObjectsField[curRow][curColumn] = null;
+            _field[curRow][curColumn] = null;
+            
+        }
+        else if (_gameObjectsField[curRow][curColumn] == null)
+        {
+            _gameObjectsField[prevRow][prevColumn].GetComponent<Square>().setCoordAndBulder(curRow, curColumn, this);
+            initNewSquare(curRow, curColumn, _gameObjectsField[prevRow][prevColumn]);
+            _field[curRow][curColumn] = _gameObjectsField[curRow][curColumn].GetComponent<Square>();
+            
+            _gameObjectsField[prevRow][prevColumn] = null;
+            _field[prevRow][prevColumn] = null;
+        }
+        else
+        {
+            GameObject firstObject = createCopy(_gameObjectsField[prevRow][prevColumn]);
+            GameObject secondObject = createCopy(_gameObjectsField[curRow][curColumn]);
+            firstObject.GetComponent<Square>().setCoordAndBulder(curRow, curColumn, this);
+            secondObject.GetComponent<Square>().setCoordAndBulder(prevRow, prevColumn, this);
+
+            initNewSquare(curRow, curColumn, firstObject);
+            initNewSquare(prevRow, prevColumn, secondObject);
+
+        }
+
+        if (_field[curRow][curColumn])
+        {
+            _field[curRow][curColumn].setNormalView();
+        }
+        
+        if (_field[prevRow][prevColumn])
+        {
+            _field[prevRow][prevColumn].setNormalView();
+        }
+
+        _prevSelectedSquare = null;
+        _selectedSquare = null;
+    }
+
+    private GameObject createCopy(GameObject gameObject)
+    {
+        Square square = gameObject.GetComponent<Square>();
+        GameObject res = Instantiate(
+            gameObject,
+            new Vector3(deltaSize * square.getColumn() + rightX, deltaSize * square.getRow() + rightY, 0),
+            Quaternion.identity
+        );
+        res.transform.SetParent(_canvas.transform, false);
+
+        return res;
+    }
+
     private void checkOnDelete()
     {
+        bool wasDeleted = false;
         for (int row = 0; row < FIELD_SIZE; row++)
         {
             for (int column = 0; column < FIELD_SIZE; column++)
             {
+                if (_field[row][column] == null)
+                {
+                    continue;
+                }
                 SquareType curType = _field[row][column].getType();
                 List<Square> toDelete = new List<Square>();
                 List<Square> additional = new List<Square>();
-                for (int curRow = row + 1; curRow < FIELD_SIZE && _field[curRow][column].getType() == curType; curRow++)
+                for (int curRow = row + 1; curRow < FIELD_SIZE && _field[curRow][column] && _field[curRow][column].getType() == curType; curRow++)
                 {
                     additional.Add(_field[curRow][column]);
                 }
                 checkOnMerge(toDelete, additional);
                 
-                for (int curRow = row - 1; curRow >= 0 && _field[curRow][column].getType() == curType; curRow--)
+                for (int curRow = row - 1; curRow >= 0 && _field[curRow][column] && _field[curRow][column].getType() == curType; curRow--)
                 {
-                    toDelete.Add(_field[curRow][column]);
+                    additional.Add(_field[curRow][column]);
+                }
+                checkOnMerge(toDelete, additional);
+                additional = new List<Square>();
+                
+                for (int curColumn = column + 1; curColumn < FIELD_SIZE && _field[row][curColumn] && _field[row][curColumn].getType() == curType; curColumn++)
+                {
+                    additional.Add(_field[row][curColumn]);
                 }
                 checkOnMerge(toDelete, additional);
                 
-                for (int curColumn = column + 1; curColumn < FIELD_SIZE && _field[row][curColumn].getType() == curType; curColumn++)
+                for (int curColumn = column - 1; curColumn >= 0 && _field[row][curColumn] && _field[row][curColumn].getType() == curType; curColumn--)
                 {
-                    toDelete.Add(_field[row][curColumn]);
-                }
-                checkOnMerge(toDelete, additional);
-                
-                for (int curColumn = column - 1; curColumn >= 0 && _field[row][curColumn].getType() == curType; curColumn--)
-                {
-                    toDelete.Add(_field[row][curColumn]);
+                    additional.Add(_field[row][curColumn]);
                 }
                 checkOnMerge(toDelete, additional);
 
@@ -270,9 +325,14 @@ public class FiledBuilder : MonoBehaviour
                 {
                     toDelete.Add(_field[row][column]);
                     deleteSquares(toDelete);
-                    return;
+                    wasDeleted = true;
                 }
             }
+        }
+
+        if (wasDeleted)
+        {
+            FallField();
         }
     }
 
@@ -280,7 +340,7 @@ public class FiledBuilder : MonoBehaviour
     {
         if (additional.Count >= 2)
         {
-            for (int i = 0; i < additional.Count; i++)
+            for (int i = 0; i < additional.Count && !toDelete.Contains(additional[i]); i++)
             {
                 toDelete.Add(additional[i]);
             }
@@ -292,11 +352,34 @@ public class FiledBuilder : MonoBehaviour
         for (int i = 0; i < toDelete.Count; i++)
         {
             Destroy(_gameObjectsField[toDelete[i].getRow()][toDelete[i].getColumn()]);
+            _gameObjectsField[toDelete[i].getRow()][toDelete[i].getColumn()] = null;
             _field[toDelete[i].getRow()][toDelete[i].getColumn()] = null;
         }
     }
 
-    private void initNewSquare(int row, int column)
+    private void FallField()
+    {
+        bool wasFalles = true;
+        for (int i = 0; i < 5; i++)
+        {
+            
+            wasFalles = false;
+            for (int row = FIELD_SIZE - 1; row >= 0; row--)
+            {
+                for (int column = FIELD_SIZE - 1; column >= 0; column--)
+                {
+                    if (row >= 1 && _field[row - 1][column] == null)
+                    {
+                        SwapSquares(row, column, row - 1, column);
+                        wasFalles = true;
+                    }
+                }
+            }
+            
+        }
+    }
+
+    /*private void initNewSquare(int row, int column)
     {
         GameObject prev = _gameObjectsField[row][column];
         
@@ -306,6 +389,24 @@ public class FiledBuilder : MonoBehaviour
             Quaternion.identity
         );
         _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
+        _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
+        Destroy(prev);
+    }*/
+    
+    private void initNewSquare(int row, int column, GameObject gameObject)
+    {
+        GameObject prev = gameObject;
+
+        Destroy(_gameObjectsField[row][column]);
+        
+        _gameObjectsField[row][column] = Instantiate(
+            gameObject,
+            new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
+            Quaternion.identity
+        );
+        _gameObjectsField[row][column].GetComponent<Square>().setCoordAndBulder(row, column, this);
+        _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
+        _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
         Destroy(prev);
     }
 
