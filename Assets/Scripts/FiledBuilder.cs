@@ -181,7 +181,6 @@ public class FiledBuilder : MonoBehaviour
 
     public void SquareIsSelect(Square square, int row, int column)
     {
-        Debug.Log("Selected " + row +" " + column);
         if (_selectedSquare == null)
         {
             _selectedSquare = new CurSelectedSquare(square, row, column);
@@ -362,8 +361,6 @@ public class FiledBuilder : MonoBehaviour
         bool wasFalles = true;
         for (int i = 0; i < 5; i++)
         {
-            
-            wasFalles = false;
             for (int row = FIELD_SIZE - 1; row >= 0; row--)
             {
                 for (int column = FIELD_SIZE - 1; column >= 0; column--)
@@ -371,28 +368,36 @@ public class FiledBuilder : MonoBehaviour
                     if (row >= 1 && _field[row - 1][column] == null)
                     {
                         SwapSquares(row, column, row - 1, column);
-                        wasFalles = true;
                     }
                 }
             }
-            
+        }
+
+        initField();
+        checkOnDelete();
+    }
+
+    private void initField()
+    {
+        for (int row = FIELD_SIZE - 1; row >= 0; row--)
+        {
+            for (int column = FIELD_SIZE - 1; column >= 0; column--)
+            {
+                if (_gameObjectsField[row][column] == null)
+                {
+                    _gameObjectsField[row][column] = Instantiate(
+                        _squareVariants[Random.Range(0, 5)],
+                        new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
+                        Quaternion.identity
+                    );
+                    _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
+                    _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
+                    _field[row][column].setCoordAndBulder(row, column, this);
+                }
+            }
         }
     }
 
-    /*private void initNewSquare(int row, int column)
-    {
-        GameObject prev = _gameObjectsField[row][column];
-        
-        _gameObjectsField[row][column] = Instantiate(
-            _gameObjectsField[row][column],
-            new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
-            Quaternion.identity
-        );
-        _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
-        _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
-        Destroy(prev);
-    }*/
-    
     private void initNewSquare(int row, int column, GameObject gameObject)
     {
         GameObject prev = gameObject;
