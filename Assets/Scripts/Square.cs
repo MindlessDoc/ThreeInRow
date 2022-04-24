@@ -12,6 +12,11 @@ public class Square : MonoBehaviour
     [SerializeField] private Sprite _rightSprite;
     [SerializeField] private Sprite _wrongSprite;
 
+    [SerializeField] private FiledBuilder _filedBuilder;
+
+    private int row;
+    private int column;
+
     private void Awake()
     {
 
@@ -25,5 +30,10 @@ public class Square : MonoBehaviour
     public SquareType getType()
     {
         return _type;
+    }
+
+    public void setCoord(int row, int column)
+    {
+        
     }
 }

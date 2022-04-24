@@ -96,12 +96,13 @@ public class FiledBuilder : MonoBehaviour
                 
                 Debug.Log(_transform.position);
                 _gameObjectsField[row][column] = Instantiate(
-                    _squareVariants[resList[Random.Range(0, resList.Count - 1)]],
+                    _squareVariants[resList[Random.Range(0, resList.Count)]],
                     new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
                     Quaternion.identity
                     );
                 _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
                 _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
+                _field[row][column].setCoord(row, column);
             }
         }
     }
@@ -111,51 +112,51 @@ public class FiledBuilder : MonoBehaviour
         if (row < _field.Count - 1)
         {
             if (_field[row + 1][column] && _field[row + 1][column].getType() == type)
-                return false;
+            {
+                if (row < _field.Count - 2)
+                {
+                    if (_field[row + 2][column] && _field[row + 2][column].getType() == type)
+                        return false;
+                }
+            }
         }
 
-        if (row < _field.Count - 2)
-        {
-            if (_field[row + 2][column] && _field[row + 2][column].getType() == type)
-                return false;
-        }
-        
         if (row > 0)
         {
             if (_field[row - 1][column] && _field[row - 1][column].getType() == type)
-                return false;
+            {
+                if (row > 1)
+                {
+                    if (_field[row - 2][column] && _field[row - 2][column].getType() == type)
+                        return false;
+                }
+            }
         }
-        
-        if (row > 1)
-        {
-            if (_field[row - 2][column] && _field[row - 2][column].getType() == type)
-                return false;
-        }
-        
+
         if (column < _field[row].Count - 1)
         {
             if (_field[row][column + 1] && _field[row][column + 1].getType() == type)
-                return false;
+            {
+                if (column < _field[row].Count - 2)
+                {
+                    if (_field[row][column + 2] && _field[row][column + 2].getType() == type)
+                        return false;
+                }
+            }
         }
 
-        if (column < _field[row].Count - 2)
-        {
-            if (_field[row][column + 2] && _field[row][column + 2].getType() == type)
-                return false;
-        }
-        
         if (column > 0)
         {
             if (_field[row][column - 1] && _field[row][column - 1].getType() == type)
-                return false;
+            {
+                if (column > 1)
+                {
+                    if (_field[row][column - 2] && _field[row][column - 2].getType() == type)
+                        return false;
+                }
+            }
         }
         
-        if (column > 1)
-        {
-            if (_field[row][column - 2] && _field[row][column - 2].getType() == type)
-                return false;
-        }
-
         return true;
     }
 }
