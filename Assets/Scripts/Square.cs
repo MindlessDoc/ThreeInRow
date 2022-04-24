@@ -53,4 +53,14 @@ public class Square : MonoBehaviour
     {
         GetComponent<Image>().sprite = _wrongSprite;
     }
+
+    public int getRow()
+    {
+        return _row;
+    }
+
+    public int getColumn()
+    {
+        return _column;
+    }
 }

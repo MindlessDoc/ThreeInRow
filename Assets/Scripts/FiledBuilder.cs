@@ -221,6 +221,8 @@ public class FiledBuilder : MonoBehaviour
 
                 _prevSelectedSquare = null;
                 _selectedSquare = null;
+
+                checkOnDelete();
             }
             else
             {
@@ -228,6 +230,69 @@ public class FiledBuilder : MonoBehaviour
                 _checkOnWrong = true;
                 _timeWrong = _curTime;
             }
+        }
+    }
+
+    private void checkOnDelete()
+    {
+        for (int row = 0; row < FIELD_SIZE; row++)
+        {
+            for (int column = 0; column < FIELD_SIZE; column++)
+            {
+                SquareType curType = _field[row][column].getType();
+                List<Square> toDelete = new List<Square>();
+                List<Square> additional = new List<Square>();
+                for (int curRow = row + 1; curRow < FIELD_SIZE && _field[curRow][column].getType() == curType; curRow++)
+                {
+                    additional.Add(_field[curRow][column]);
+                }
+                checkOnMerge(toDelete, additional);
+                
+                for (int curRow = row - 1; curRow >= 0 && _field[curRow][column].getType() == curType; curRow--)
+                {
+                    toDelete.Add(_field[curRow][column]);
+                }
+                checkOnMerge(toDelete, additional);
+                
+                for (int curColumn = column + 1; curColumn < FIELD_SIZE && _field[row][curColumn].getType() == curType; curColumn++)
+                {
+                    toDelete.Add(_field[row][curColumn]);
+                }
+                checkOnMerge(toDelete, additional);
+                
+                for (int curColumn = column - 1; curColumn >= 0 && _field[row][curColumn].getType() == curType; curColumn--)
+                {
+                    toDelete.Add(_field[row][curColumn]);
+                }
+                checkOnMerge(toDelete, additional);
+
+                if (toDelete.Count >= 2)
+                {
+                    toDelete.Add(_field[row][column]);
+                    deleteSquares(toDelete);
+                    return;
+                }
+            }
+        }
+    }
+
+    private void checkOnMerge(List<Square> toDelete, List<Square> additional)
+    {
+        if (additional.Count >= 2)
+        {
+            for (int i = 0; i < additional.Count; i++)
+            {
+                toDelete.Add(additional[i]);
+            }
+        }
+    }
+
+    private void deleteSquares(List<Square> toDelete)
+    {
+        for (int i = 0; i < toDelete.Count; i++)
+        {
+            Destroy(_gameObjectsField[toDelete[i].getRow()][toDelete[i].getColumn()]);
+            _field[toDelete[i].getRow()][toDelete[i].getColumn()] = null;
         }
     }
 
