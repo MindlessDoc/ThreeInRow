@@ -199,7 +199,28 @@ public class FiledBuilder : MonoBehaviour
             if (Math.Abs(_prevSelectedSquare.getRow() - _selectedSquare.getRow()) 
                 + Math.Abs(_prevSelectedSquare.getColumn() - _selectedSquare.getColumn()) == 1)
             {
-                //TODO вставить логику смены
+                int prevRow = _prevSelectedSquare.getRow();
+                int prevColumn = _prevSelectedSquare.getColumn();
+                int curRow = _selectedSquare.getRow();
+                int curColumn = _selectedSquare.getColumn();
+
+                (_gameObjectsField[prevRow][prevColumn], _gameObjectsField[curRow][curColumn]) = 
+                    (_gameObjectsField[curRow][curColumn], _gameObjectsField[prevRow][prevColumn]);
+                
+                initNewSquare(curRow, curColumn);
+                initNewSquare(prevRow, prevColumn);
+
+                _field[curRow][curColumn] = _gameObjectsField[curRow][curColumn].GetComponent<Square>();
+                _field[prevRow][prevColumn] = _gameObjectsField[prevRow][prevColumn].GetComponent<Square>();
+                
+                _field[curRow][curColumn].setCoordAndBulder(curRow, curColumn, this);
+                _field[prevRow][prevColumn].setCoordAndBulder(prevRow, prevColumn, this);
+                
+                _field[curRow][curColumn].setNormalView();
+                _field[prevRow][prevColumn].setNormalView();
+
+                _prevSelectedSquare = null;
+                _selectedSquare = null;
             }
             else
             {
@@ -208,6 +229,19 @@ public class FiledBuilder : MonoBehaviour
                 _timeWrong = _curTime;
             }
         }
+    }
+
+    private void initNewSquare(int row, int column)
+    {
+        GameObject prev = _gameObjectsField[row][column];
+        
+        _gameObjectsField[row][column] = Instantiate(
+            _gameObjectsField[row][column],
+            new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
+            Quaternion.identity
+        );
+        _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
+        Destroy(prev);
     }
 
     private void SelectedWrong()
