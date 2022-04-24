@@ -1,7 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using Random = UnityEngine.Random;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
+using Object = System.Object;
+using Timer = System.Threading.Timer;
 
 public class FiledBuilder : MonoBehaviour
 {
@@ -13,13 +21,11 @@ public class FiledBuilder : MonoBehaviour
     [SerializeField] private GameObject _square_1_Prefab;
 
     [SerializeField] private Canvas _canvas;
+    [SerializeField] private EventSystem _eventSystem;
 
     [SerializeField] private float deltaSize = 50;
     [SerializeField] private float rightX;
     [SerializeField] private float rightY;
-
-
-    private Transform _transform;
 
     private Dictionary<int, GameObject> _squareVariants;
 
@@ -28,12 +34,19 @@ public class FiledBuilder : MonoBehaviour
 
     [SerializeField] private List<List<GameObject>> _gameObjectsField;
     private List<List<Square>> _field;
- 
 
+    private float _curTime = 0;
+    [SerializeField] private float wrongPause = 0.5f;
+
+    private CurSelectedSquare _selectedSquare;
+    private CurSelectedSquare _prevSelectedSquare;
+
+    private bool _checkOnWrong = false;
+    private float _timeWrong;
     private void Awake()
     {
-        _transform = _canvas.transform;
-        
+        _selectedSquare = null;
+
         _gameObjectsField = new List<List<GameObject>>();
         _field = new List<List<Square>>();
         _squareVariants = new Dictionary<int, GameObject>();
@@ -50,7 +63,14 @@ public class FiledBuilder : MonoBehaviour
     
     void Update()
     {
-        
+        _curTime += Time.deltaTime;
+        PlayerPrefs.SetFloat("timer", _curTime);
+
+        if (_checkOnWrong && _curTime - _timeWrong > 0.5)
+        {
+            _checkOnWrong = false;
+            DeleteWrongView();
+        }
     }
 
     private void initSquareVariants()
@@ -94,7 +114,6 @@ public class FiledBuilder : MonoBehaviour
                     }
                 }
                 
-                Debug.Log(_transform.position);
                 _gameObjectsField[row][column] = Instantiate(
                     _squareVariants[resList[Random.Range(0, resList.Count)]],
                     new Vector3(deltaSize * column + rightX, deltaSize * row + rightY, 0),
@@ -102,7 +121,7 @@ public class FiledBuilder : MonoBehaviour
                     );
                 _gameObjectsField[row][column].transform.SetParent(_canvas.transform, false);
                 _field[row][column] = _gameObjectsField[row][column].GetComponent<Square>();
-                _field[row][column].setCoord(row, column);
+                _field[row][column].setCoordAndBulder(row, column, this);
             }
         }
     }
@@ -158,5 +177,81 @@ public class FiledBuilder : MonoBehaviour
         }
         
         return true;
+    }
+
+    public void SquareIsSelect(Square square, int row, int column)
+    {
+        if (_selectedSquare == null)
+        {
+            _selectedSquare = new CurSelectedSquare(square, row, column);
+            square.setSelectedView();
+        }
+        else if (_selectedSquare.getSquare() == square)
+        {
+            square.setNormalView();
+            _selectedSquare = null;
+        }
+        else
+        {
+            _prevSelectedSquare = _selectedSquare;
+            _selectedSquare = new CurSelectedSquare(square, row, column);
+
+            if (Math.Abs(_prevSelectedSquare.getRow() - _selectedSquare.getRow()) 
+                + Math.Abs(_prevSelectedSquare.getColumn() - _selectedSquare.getColumn()) == 1)
+            {
+                //TODO вставить логику смены
+            }
+            else
+            {
+                SelectedWrong();
+                _checkOnWrong = true;
+                _timeWrong = _curTime;
+            }
+        }
+    }
+
+    private void SelectedWrong()
+    {
+        _prevSelectedSquare.getSquare().setWrongView();
+        _selectedSquare.getSquare().setWrongView();
+        _eventSystem.enabled = false;
+    }
+
+    private void DeleteWrongView()
+    {
+        _prevSelectedSquare.getSquare().setNormalView();
+        _selectedSquare.getSquare().setNormalView();
+        
+        _prevSelectedSquare = null;
+        _selectedSquare = null;
+        _eventSystem.enabled = true;
+    }
+
+    public class CurSelectedSquare
+    {
+        private int _row;
+        private int _column;
+        private Square _square;
+        public CurSelectedSquare(Square square, int row, int column)
+        {
+            _square = square;
+            _row = row;
+            _column = column;
+        }
+
+        public int getRow()
+        {
+            return _row;
+        }
+        
+        public int getColumn()
+        {
+            return _column;
+        }
+
+        public Square getSquare()
+        {
+            return _square;
+        }
     }
 }

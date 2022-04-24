@@ -14,17 +14,17 @@ public class Square : MonoBehaviour
 
     [SerializeField] private FiledBuilder _filedBuilder;
 
-    private int row;
-    private int column;
+    private int _row;
+    private int _column;
 
     private void Awake()
     {
-
+        
     }
 
     public void OnClick()
     {
-        GetComponent<Image>().sprite = _selectSprite;
+        _filedBuilder.SquareIsSelect(this, _row, _column);
     }
 
     public SquareType getType()
@@ -32,8 +32,25 @@ public class Square : MonoBehaviour
         return _type;
     }
 
-    public void setCoord(int row, int column)
+    public void setCoordAndBulder(int row, int column, FiledBuilder filedBuilder)
     {
-        
+        _row = row;
+        _column = column;
+        _filedBuilder = filedBuilder;
+    }
+
+    public void setSelectedView()
+    {
+        GetComponent<Image>().sprite = _selectSprite;
+    }
+
+    public void setNormalView()
+    {
+        GetComponent<Image>().sprite = _normalSprite;
+    }
+
+    public void setWrongView()
+    {
+        GetComponent<Image>().sprite = _wrongSprite;
     }
 }
